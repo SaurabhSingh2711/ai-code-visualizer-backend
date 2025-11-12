@@ -11,4 +11,4 @@ This backend powers the AI Visualizer tool that parses source code and generates
 1. Create virtual environment: `python -m venv venv`
 2. Activate environment: `venv\Scripts\activate` or `source venv/bin/activate`
 3. Install dependencies: `pip install -r requirements.txt`
-4. Run app: `uvicorn app.main:app --reload`
+4. Run app: `uvicorn main:app --reload`
