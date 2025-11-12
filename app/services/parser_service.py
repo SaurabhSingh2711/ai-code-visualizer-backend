@@ -1,134 +1,82 @@
-"""
-Parser Service — Day 2 Version
---------------------------------
-Parses uploaded code files (Python / Java) and extracts:
-- Classes
-- Functions / Methods
-- Imports
-
-Returns structured JSON like:
-{
-  "classes": [...],
-  "functions": [...],
-  "imports": [...],
-  "summary": "1 class, 2 functions, 3 imports found."
-}
-"""
-
 import ast
 import re
 
-
 def parse_code_from_text(code_text: str, language: str):
     """
-    Entry point for parser service.
-    Supports 'python' and 'java' languages.
+    Main entry point for parsing Python or Java code text.
+    Returns structured dictionary containing classes, functions, imports.
     """
-    language = language.lower()
+    if not code_text.strip():
+        return {"summary": "Empty source file", "classes": [], "functions": [], "imports": []}
 
     if language == "python":
-        return _parse_python(code_text)
+        return parse_python_code(code_text)
     elif language == "java":
-        return _parse_java(code_text)
+        return parse_java_code(code_text)
     else:
-        return {"error": f"Unsupported language: {language}"}
+        raise ValueError("Unsupported language type")
 
 
-# ---------- PYTHON PARSER ----------
-def _parse_python(code_text: str):
-    classes = []
-    functions = []
-    imports = []
-
+# ========================
+# PYTHON PARSER
+# ========================
+def parse_python_code(code_text: str):
+    print("[DEBUG] Python parser started...")
     try:
         tree = ast.parse(code_text)
-    except SyntaxError as e:
-        return {"error": "Python syntax error", "details": str(e)}
-    
-    print("first Code received:", code_text[:200])
+    except Exception as e:
+        print(f"[ERROR] Python parse failed: {e}")
+        return {"summary": f"Parse error: {e}", "classes": [], "functions": [], "imports": []}
+
+    classes, functions, imports = [], [], []
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             classes.append(node.name)
-            print("second Code received:", code_text[:200])
         elif isinstance(node, ast.FunctionDef):
             functions.append(node.name)
-            print("third Code received:", code_text[:200])
         elif isinstance(node, ast.Import):
-            for n in node.names:
-                imports.append(n.name)
+            for alias in node.names:
+                imports.append(alias.name)
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 imports.append(node.module)
 
+    summary = f"{len(classes)} classes, {len(functions)} functions, {len(imports)} imports found."
+    print(f"[DEBUG] Python parse summary: {summary}")
+
     return {
+        "summary": summary,
         "classes": classes,
         "functions": functions,
-        "imports": imports,
-        "summary": f"{len(classes)} classes, {len(functions)} functions, {len(imports)} imports found."
+        "imports": imports
     }
 
 
-# ---------- JAVA PARSER ----------
-def _parse_java(code_text: str):
-    """
-    Attempts to parse Java code using 'javalang' if available,
-    otherwise falls back to regex-based parsing.
-    """
-    try:
-        import javalang
-    except ImportError:
-        return _parse_java_with_regex(code_text)
+# ========================
+# JAVA PARSER
+# ========================
+def parse_java_code(code_text: str):
+    print("[DEBUG] Java parser started...")
 
-    classes = []
-    functions = []
-    imports = []
+    # Basic patterns for structure extraction
+    class_pattern = re.compile(r"\bclass\s+(\w+)")
+    interface_pattern = re.compile(r"\binterface\s+(\w+)")
+    function_pattern = re.compile(r"(?:public|private|protected)?\s+\w+\s+(\w+)\s*\(")
+    import_pattern = re.compile(r"import\s+([\w\.]+);")
 
-    try:
-        tree = javalang.parse.parse(code_text)
-    except Exception:
-        # fallback to regex parsing on any error
-        return _parse_java_with_regex(code_text)
+    classes = class_pattern.findall(code_text)
+    interfaces = interface_pattern.findall(code_text)
+    functions = function_pattern.findall(code_text)
+    imports = import_pattern.findall(code_text)
 
-    # imports
-    for imp in getattr(tree, "imports", []):
-        imports.append(imp.path)
-
-    # class/type declarations
-    for type_decl in getattr(tree, "types", []):
-        try:
-            if getattr(type_decl, "name", None):
-                classes.append(type_decl.name)
-                # extract method names
-                for method in getattr(type_decl, "methods", []):
-                    functions.append(method.name)
-        except Exception:
-            pass
+    summary = f"{len(classes)} classes, {len(functions)} functions, {len(imports)} imports, {len(interfaces)} interfaces found."
+    print(f"[DEBUG] Java parse summary: {summary}")
 
     return {
+        "summary": summary,
         "classes": classes,
         "functions": functions,
         "imports": imports,
-        "summary": f"{len(classes)} classes, {len(functions)} functions, {len(imports)} imports found."
-    }
-
-
-# ---------- JAVA REGEX FALLBACK ----------
-def _parse_java_with_regex(code_text: str):
-    """
-    Basic regex fallback parser for Java files when javalang is missing or fails.
-    """
-    class_pattern = r'\bclass\s+([A-Za-z_][A-Za-z0-9_]*)'
-    method_pattern = r'(?:public|private|protected)?\s*(?:static\s+)?[A-Za-z0-9_<>\[\]]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*\('
-    import_pattern = r'import\s+([\w\.]+);'
-
-    classes = re.findall(class_pattern, code_text)
-    functions = re.findall(method_pattern, code_text)
-    imports = re.findall(import_pattern, code_text)
-
-    return {
-        "classes": classes,
-        "functions": functions,
-        "imports": imports,
-        "summary": f"{len(classes)} classes, {len(functions)} functions, {len(imports)} imports found (regex fallback)."
+        "interfaces": interfaces
     }

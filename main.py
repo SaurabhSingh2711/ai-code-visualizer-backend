@@ -1,15 +1,15 @@
 from fastapi import FastAPI
-from app.routes import analyze, insight
+from app.routes.analyze import router as analyze_router
 
 app = FastAPI(
-    title="AI Code-to-Architecture Visualizer Backend",
-    description="Backend API to parse source code and generate architecture diagrams",
+    title="AI Code-to-Architecture Visualizer",
     version="1.0.0"
 )
 
-app.include_router(analyze.router, prefix="/api/analyze", tags=["Analyze"])
-app.include_router(insight.router, prefix="/api/insight", tags=["Insights"])
+# This line registers your analyzer API
+app.include_router(analyze_router, prefix="/api")
 
 @app.get("/")
-def root():
-    return {"message": "AI Code-to-Architecture Visualizer Backend Running ✅"}
+async def root():
+    return {"message": "AI Code Visualizer Backend is running"}
+
