@@ -1,14 +1,7 @@
-# app/models/architecture_model.py
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Optional
 
-class ModuleAnalysis(BaseModel):
-    classes: List[str]
-    functions: List[str]
-    imports: List[str]
+class InsightResult(BaseModel):
     summary: str
-
-class AnalysisResponse(BaseModel):
-    filename: str
-    language: str
-    analysis: ModuleAnalysis
+    hints: List[str]
+    metrics: Dict[str, int]
