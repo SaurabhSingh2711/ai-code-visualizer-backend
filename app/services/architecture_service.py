@@ -1,27 +1,55 @@
-def build_architecture_map(parsed_data: dict):
-    """
-    Builds a lightweight architecture graph from parsed data.
-    (Dummy but structured enough for frontend visualization.)
-    """
-    nodes, edges = [], []
+def build_architecture_map(parsed):
+    nodes = []
+    edges = []
 
-    # Add class nodes
-    for cls in parsed_data.get("classes", []):
-        nodes.append({"id": cls, "type": "class"})
+    # Add classes
+    for cls in parsed.get("classes", []):
+        nodes.append({
+            "id": f"class:{cls}",
+            "type": "class",
+            "label": cls          # <-- ADDED
+        })
 
-    # Add function nodes
-    for fn in parsed_data.get("functions", []):
-        nodes.append({"id": fn, "type": "function"})
+    # Add functions
+    for func in parsed.get("functions", []):
+        nodes.append({
+            "id": f"func:{func}",
+            "type": "function",
+            "label": func         # <-- ADDED
+        })
 
-    # Add import nodes
-    for imp in parsed_data.get("imports", []):
-        nodes.append({"id": imp, "type": "import"})
+    # Add imports
+    for imp in parsed.get("imports", []):
+        nodes.append({
+            "id": f"import:{imp}",
+            "type": "import",
+            "label": imp          # <-- ADDED
+        })
 
-    # Create simple edges (class -> function)
-    for cls in parsed_data.get("classes", []):
-        for fn in parsed_data.get("functions", []):
-            edges.append({"from": cls, "to": fn, "type": "contains"})
+    # Edges (unchanged)
+    for cls in parsed.get("classes", []):
+        for func in parsed.get("functions", []):
+            if func.lower().startswith(cls.lower()):
+                edges.append({
+                    "from": f"class:{cls}",
+                    "to": f"func:{func}",
+                    "relation": "contains"
+                })
 
-    summary = f"{len(nodes)} nodes, {len(edges)} relationships ({len(parsed_data.get('classes', []))} classes, {len(parsed_data.get('functions', []))} functions, {len(parsed_data.get('imports', []))} imports)"
+    for imp in parsed.get("imports", []):
+        for cls in parsed.get("classes", []):
+            edges.append({
+                "from": f"import:{imp}",
+                "to": f"class:{cls}",
+                "relation": "uses"
+            })
 
-    return {"nodes": nodes, "edges": edges, "summary": summary}
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "summary":
+            f"{len(nodes)} nodes, {len(edges)} relationships "
+            f"({len(parsed.get('classes', []))} classes, "
+            f"{len(parsed.get('functions', []))} functions, "
+            f"{len(parsed.get('imports', []))} imports)"
+    }

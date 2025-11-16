@@ -1,5 +1,9 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
-from app.routes import analyze, insight, visualize   # ONLY Day 1–5 routes
+from app.routes import analyze, insight, visualize, ai_analyze, report
+
 
 app = FastAPI(
     title="AI Code-to-Architecture Visualizer",
@@ -8,10 +12,11 @@ app = FastAPI(
 
 API_PREFIX = "/api/v1"
 
-# Register available routers (Day 1–5 ONLY)
 app.include_router(analyze.router, prefix=API_PREFIX)
 app.include_router(insight.router, prefix=API_PREFIX)
 app.include_router(visualize.router, prefix=API_PREFIX)
+app.include_router(ai_analyze.router, prefix=API_PREFIX)
+app.include_router(report.router, prefix=API_PREFIX)
 
 @app.get("/")
 async def root():
