@@ -1,9 +1,8 @@
 # app/utils/file_utils.py
-
 import os
 import uuid
+import zipfile
 import shutil
-import tempfile
 from fastapi import UploadFile
 
 TEMP_DIR = "temp_uploads"
@@ -16,22 +15,54 @@ def ensure_temp_dir():
 
 async def save_upload_file_temp(upload_file: UploadFile) -> str:
     """
-    Saves the uploaded file WITHOUT consuming the file stream,
-    so other functions can still read the content.
+    Save single UploadFile to a temporary file and return its path.
     """
-
     ensure_temp_dir()
-
-    # Get extension (.py or .java)
     ext = os.path.splitext(upload_file.filename)[1]
     fname = f"{uuid.uuid4().hex}{ext}"
-    temp_path = os.path.join(TEMP_DIR, fname)
+    path = os.path.join(TEMP_DIR, fname)
 
-    # Use raw file stream WITHOUT calling upload_file.read()
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(upload_file.file, buffer)
+    with open(path, "wb") as f:
+        content = await upload_file.read()
+        f.write(content)
 
-    # Reset file pointer so the caller can read again
-    upload_file.file.seek(0)
+    return path
 
-    return temp_path
+
+# --------------------------------------------------------------------
+# NEW — DAY-8 ZIP SUPPORT
+# --------------------------------------------------------------------
+
+def extract_zip_to_temp(upload_file: UploadFile) -> str:
+    """
+    Extract uploaded ZIP to a temp folder and return the folder path.
+    """
+    ensure_temp_dir()
+
+    # create unique folder for extraction
+    extract_dir = os.path.join(TEMP_DIR, uuid.uuid4().hex)
+    os.makedirs(extract_dir, exist_ok=True)
+
+    # save uploaded zip temporarily
+    zip_temp_path = os.path.join(TEMP_DIR, f"{uuid.uuid4().hex}.zip")
+    with open(zip_temp_path, "wb") as f:
+        f.write(upload_file.file.read())
+
+    # extract
+    with zipfile.ZipFile(zip_temp_path, "r") as zip_ref:
+        zip_ref.extractall(extract_dir)
+
+    # remove the temporary zip
+    os.remove(zip_temp_path)
+
+    return extract_dir
+
+
+def cleanup_temp_dir(path: str):
+    """
+    Remove extracted ZIP folder.
+    """
+    try:
+        shutil.rmtree(path)
+    except Exception:
+        pass
