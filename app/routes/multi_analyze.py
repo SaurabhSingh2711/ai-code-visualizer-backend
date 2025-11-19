@@ -3,7 +3,10 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.utils.file_utils import extract_zip_to_temp, cleanup_temp_dir
 from app.services.parser_service import parse_code_from_text
-from app.services.architecture_service import build_architecture_map
+from app.services.architecture_service import (
+    build_architecture_map,
+    build_system_architecture,
+)
 from app.services.layout_service import generate_layout
 
 from app.services.system_insight_service import (
@@ -25,26 +28,19 @@ router = APIRouter()
 @router.post("/multi-analyze/")
 async def analyze_project_zip(file: UploadFile = File(...)):
     """
-    Day-9: Full multi-file project analysis
-    - Accepts .zip file
-    - Extracts / temp folder
-    - Parses all .py / .java files
-    - Merges project-level insights
-    - Detects cross-file relations
-    - Detects subsystems, layers, service calls
-    - Produces system-wide architecture + layout
+    Day-9 & Day-10: Full multi-file project analysis
     """
 
-    # Step 1 — Validate zip file
+    # Step 1 — Validate zip
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Please upload a .zip file")
 
-    # Step 2 — Extract ZIP to temp dir
+    # Step 2 — Extract
     extract_path = extract_zip_to_temp(file)
 
     parsed_results = {}
 
-    # Step 3 — Walk extracted folder and parse all source files
+    # Step 3 — Parse all files
     for root, dirs, files in os.walk(extract_path):
         for fname in files:
             if fname.endswith(".py") or fname.endswith(".java"):
@@ -56,39 +52,41 @@ async def analyze_project_zip(file: UploadFile = File(...)):
                 language = "python" if fname.endswith(".py") else "java"
 
                 parsed_output = parse_code_from_text(code_text, language)
-
-                # Required for class/function reference detection
-                parsed_output["raw_text"] = code_text
+                parsed_output["raw_text"] = code_text  # Required for detection
 
                 parsed_results[fname] = parsed_output
 
-    # Step 4 — Merge full project summary (Day-9 core feature)
+    # Step 4 — Merge project summary
     merged = merge_project_data(parsed_results)
 
-    # Step 5 — Cross-file relations (imports, class/function calls)
+    # Step 5 — Cross-file relations
     relations = detect_cross_file_relations(parsed_results)
 
-    # Step 6 — Subsystem detection
+    # Step 6 — Subsystems
     subsystems = detect_subsystems(parsed_results)
 
-    # Step 7 — Layered architecture detection
+    # Step 7 — Layers
     layers = detect_layers(parsed_results)
 
-    # Step 8 — Service-to-service call graph
+    # Step 8 — Service calls (service → service)
     service_calls = detect_service_calls(parsed_results)
 
-    # Step 9 — Build final architecture (Day-10 fix)
-    # ----------------------------------------------
-    # important: merged["combined"] contains classes/functions/imports
-    architecture = build_architecture_map(merged.get("combined", {}))
+    # Step 9 — Build final system architecture graph
+    system_architecture = build_system_architecture(
+        parsed_results,
+        relations,
+        subsystems,
+        layers,
+        service_calls
+    )
 
-    # Step 10 — Layout for UI visualization
-    layout = generate_layout(architecture)
+    # Step 10 — Layout for UI graph display
+    layout = generate_layout(system_architecture)
 
-    # Step 11 — Cleanup temporary folder
+    # Step 11 — Cleanup temporary workspace
     cleanup_temp_dir(extract_path)
 
-    # Step 12 — Return final artifact
+    # Step 12 — Final return
     return {
         "parsed_files": parsed_results,
         "system_summary": merged,
@@ -96,6 +94,6 @@ async def analyze_project_zip(file: UploadFile = File(...)):
         "subsystems": subsystems,
         "layers": layers,
         "service_calls": service_calls,
-        "architecture": architecture,
+        "architecture": system_architecture,
         "layout": layout,
     }
