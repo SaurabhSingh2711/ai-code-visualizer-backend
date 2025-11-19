@@ -1,116 +1,186 @@
 # app/services/system_insight_service.py
 
-import os
-from typing import Dict, Any, List
+import re
 
+############################################################
+# DAY-9 — MERGING SYSTEM DATA
+############################################################
 
-# ----------------------------------------------------------
-# MAIN ENTRY: Build system-level insights for ZIP project
-# ----------------------------------------------------------
-def build_system_insights(parsed_results: Dict[str, Any]) -> Dict[str, Any]:
-    files = list(parsed_results.keys())
+def merge_project_data(parsed_files: dict):
+    """
+    Combine classes, functions, and imports across all files.
+    """
+    all_classes = []
+    all_functions = []
+    all_imports = []
 
-    # Extract combined metrics
-    combined = {
-        "classes": [],
-        "functions": [],
-        "imports": []
+    for fname, data in parsed_files.items():
+        all_classes.extend(data.get("classes", []))
+        all_functions.extend(data.get("functions", []))
+        all_imports.extend(data.get("imports", []))
+
+    summary = {
+        "summary": f"Parsed project → {len(all_classes)} classes, {len(all_functions)} functions, {len(all_imports)} imports",
+        "combined": {
+            "classes": all_classes,
+            "functions": all_functions,
+            "imports": all_imports
+        }
     }
 
-    for fname, data in parsed_results.items():
-        combined["classes"].extend(data.get("classes", []))
-        combined["functions"].extend(data.get("functions", []))
-        combined["imports"].extend(data.get("imports", []))
-
-    # Detect cross-file relationships
-    cross_file_relations = detect_cross_file_relations(parsed_results)
-
-    return {
-        "summary": f"Parsed project → {len(combined['classes'])} classes, "
-                   f"{len(combined['functions'])} functions, "
-                   f"{len(combined['imports'])} imports",
-
-        "combined": combined,
-
-        "cross_file_relations": cross_file_relations
-    }
+    return summary
 
 
-# ----------------------------------------------------------
-# CROSS-FILE SCAN
-# ----------------------------------------------------------
-def detect_cross_file_relations(parsed_results: Dict[str, Any]) -> List[Dict[str, str]]:
+############################################################
+# DAY-9 — CROSS-FILE DEPENDENCY DETECTION
+############################################################
+
+def detect_cross_file_relations(parsed_files: dict):
+    """
+    Detect inter-file relationships such as:
+    - imports-module
+    - references-class
+    - references-function
+    """
     relations = []
 
-    files = list(parsed_results.keys())
+    for file_a, data_a in parsed_files.items():
+        raw = data_a.get("raw_text", "")
 
-    for fname in files:
-        current = parsed_results[fname]
-        current_imports = current.get("imports", [])
-        current_text = current.get("raw_text", "") or ""
-
-        # Normalize
-        current_imports = [i.strip() for i in current_imports]
-
-        for other_file in files:
-            if other_file == fname:
+        for file_b, data_b in parsed_files.items():
+            if file_a == file_b:
                 continue
 
-            other = parsed_results[other_file]
-
-            other_classes = other.get("classes", [])
-            other_functions = other.get("functions", [])
-            other_imports = other.get("imports", [])
-
-            other_text = other.get("raw_text", "") or ""
-
-            # -----------------------------------------------------
-            # 1. IMPORT-BASED RELATION (improved handling)
-            # -----------------------------------------------------
-            for imp in current_imports:
-                imp_parts = imp.split(".")      # utils.helpers → ["utils", "helpers"]
-
-                # Match against real filename without extension
-                target_base = os.path.splitext(other_file)[0].lower()
-
-                for part in imp_parts:
-                    if part.lower() == target_base:
-                        relations.append({
-                            "from": fname,
-                            "to": other_file,
-                            "relation": f"imports-module:{imp}"
-                        })
-
-            # -----------------------------------------------------
-            # 2. CROSS-FILE CLASS REFERENCE (text-based matching)
-            # -----------------------------------------------------
-            for cls in other_classes:
-                if cls in current_text:
+            # Module-based linking
+            for imp in data_a.get("imports", []):
+                module_name = imp.split(".")[-1] + ".py"
+                if module_name == file_b:
                     relations.append({
-                        "from": fname,
-                        "to": other_file,
+                        "from": file_a,
+                        "to": file_b,
+                        "relation": f"imports-module:{imp}"
+                    })
+
+            # Class references
+            for cls in data_b.get("classes", []):
+                regex = rf"\b{cls}\b"
+                if re.search(regex, raw):
+                    relations.append({
+                        "from": file_a,
+                        "to": file_b,
                         "relation": f"references-class:{cls}"
                     })
 
-            # -----------------------------------------------------
-            # 3. CROSS-FILE FUNCTION REFERENCE
-            # -----------------------------------------------------
-            for fn in other_functions:
-                if fn in current_text:
+            # Function references
+            for func in data_b.get("functions", []):
+                regex = rf"\b{func}\b"
+                if re.search(regex, raw):
                     relations.append({
-                        "from": fname,
-                        "to": other_file,
-                        "relation": f"references-function:{fn}"
+                        "from": file_a,
+                        "to": file_b,
+                        "relation": f"references-function:{func}"
                     })
 
-    # Deduplicate relations
-    unique = []
-    seen = set()
+    return relations
 
-    for r in relations:
-        key = f"{r['from']}->{r['to']}:{r['relation']}"
-        if key not in seen:
-            seen.add(key)
-            unique.append(r)
 
-    return unique
+############################################################
+# DAY-10 — SUBSYSTEM DETECTION
+############################################################
+
+SUBSYSTEM_KEYWORDS = {
+    "controller": ["controller", "api", "router", "endpoint"],
+    "service": ["service", "manager"],
+    "data": ["db", "database", "repo", "dao"],
+    "util": ["util", "helper", "common"]
+}
+
+def detect_subsystems(parsed_files: dict):
+    groups = {
+        "controller": [],
+        "service": [],
+        "data": [],
+        "util": [],
+        "unknown": []
+    }
+
+    for fname, data in parsed_files.items():
+        lowered = fname.lower()
+
+        matched = False
+        for group, keywords in SUBSYSTEM_KEYWORDS.items():
+            if any(k in lowered for k in keywords):
+                groups[group].append(fname)
+                matched = True
+                break
+
+        if not matched:
+            groups["unknown"].append(fname)
+
+    return groups
+
+
+############################################################
+# DAY-10 — ARCHITECTURE LAYER DETECTION
+############################################################
+
+LAYER_RULES = {
+    "app_layer": ["controller", "api"],
+    "service_layer": ["service"],
+    "data_layer": ["db", "repo", "dao"],
+    "utility_layer": ["util", "helper"]
+}
+
+def detect_layers(parsed_files: dict):
+    layers = {
+        "app_layer": [],
+        "service_layer": [],
+        "data_layer": [],
+        "utility_layer": [],
+        "unknown_layer": []
+    }
+
+    for fname in parsed_files.keys():
+        lowered = fname.lower()
+
+        placed = False
+        for layer, keys in LAYER_RULES.items():
+            if any(k in lowered for k in keys):
+                layers[layer].append(fname)
+                placed = True
+                break
+
+        if not placed:
+            layers["unknown_layer"].append(fname)
+
+    return layers
+
+
+############################################################
+# DAY-10 — SERVICE CALL GRAPH
+############################################################
+
+def detect_service_calls(parsed_files: dict):
+    call_graph = []
+
+    for file_a, data_a in parsed_files.items():
+        raw = data_a.get("raw_text", "")
+
+        for file_b, data_b in parsed_files.items():
+            if file_a == file_b:
+                continue
+
+            service_name = None
+            for cls in data_b.get("classes", []):
+                # Example: UserService, PaymentManager
+                if "service" in cls.lower() or "manager" in cls.lower():
+                    service_name = cls
+
+            if service_name and re.search(rf"\b{service_name}\b", raw):
+                call_graph.append({
+                    "from": file_a,
+                    "to": file_b,
+                    "relation": f"calls-service:{service_name}"
+                })
+
+    return call_graph
