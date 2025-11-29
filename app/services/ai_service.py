@@ -1,40 +1,102 @@
+# app/services/ai_service.py
+
 import os
+import json
 from typing import Dict, Any
 from openai import AzureOpenAI
 
-# Initialize Azure client
+
+# ---------------------------------------------------------
+# Azure OpenAI Client Initialization
+# ---------------------------------------------------------
 client = AzureOpenAI(
     api_key=os.getenv("AZURE_OPENAI_KEY"),
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION")
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 )
 
 DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 
 
-def generate_ai_insights(parsed: Dict[str, Any], arch: Dict[str, Any], use_llm: bool):
+# ---------------------------------------------------------
+# MAIN PUBLIC ENTRY FUNCTION
+# ---------------------------------------------------------
+def generate_full_ai_insights(
+    parsed: Dict[str, Any],
+    architecture: Dict[str, Any],
+    use_llm: bool = False
+) -> Dict[str, Any]:
     """
-    Day-6: Generate STATIC + OPTIONAL LLM-based analysis.
+    Unified AI engine (Day-13):
+    - Static analysis
+    - Optional LLM summary using Azure OpenAI
+    """
+
+    static_section = _static_analysis(parsed, architecture)
+
+    llm_section = None
+    if use_llm:
+        llm_section = _llm_insights(parsed, architecture)
+
+    return {
+        "static": static_section,
+        "llm_summary": llm_section
+    }
+
+
+# ---------------------------------------------------------
+# STATIC ANALYSIS SECTION
+# ---------------------------------------------------------
+def _static_analysis(parsed, architecture):
+    """
+    Lightweight, deterministic, fast analysis.
     """
 
     classes = parsed.get("classes", [])
     functions = parsed.get("functions", [])
     imports = parsed.get("imports", [])
 
-    # Static analysis
-    static = {
+    smells = []
+    if not functions:
+        smells.append("No functions found.")
+    if not classes:
+        smells.append("No classes found.")
+    if not imports:
+        smells.append("No imports detected.")
+
+    complexity_score = len(classes) + len(functions)
+
+    return {
         "class_count": len(classes),
         "function_count": len(functions),
         "import_count": len(imports),
-        "complexity": _rate_complexity(classes, functions),
-        "code_smells": _detect_smells(parsed),
+        "complexity": _rate_complexity(complexity_score),
+        "code_smells": smells,
+        "architecture_node_count": len(architecture.get("nodes", [])),
+        "architecture_edge_count": len(architecture.get("edges", [])),
     }
 
-    llm_summary = None
 
-    if use_llm:
-        prompt = _build_prompt(parsed, arch)
+def _rate_complexity(score: int) -> str:
+    if score < 5:
+        return "Low"
+    elif score < 15:
+        return "Medium"
+    else:
+        return "High"
 
+
+# ---------------------------------------------------------
+# LLM SECTION — Azure GPT
+# ---------------------------------------------------------
+def _llm_insights(parsed, architecture):
+    """
+    Calls Azure OpenAI GPT model.
+    """
+
+    prompt = _build_prompt(parsed, architecture)
+
+    try:
         response = client.chat.completions.create(
             model=DEPLOYMENT_NAME,
             messages=[
@@ -43,52 +105,32 @@ def generate_ai_insights(parsed: Dict[str, Any], arch: Dict[str, Any], use_llm: 
             ]
         )
 
-        # FIXED for new OpenAI SDK
-        llm_summary = response.choices[0].message.content
+        # Azure SDK new format
+        return response.choices[0].message.content
 
-    return {
-        "static": static,
-        "llm_summary": llm_summary
-    }
+    except Exception as e:
+        return f"[AZURE LLM ERROR] {str(e)}"
 
 
-# Helper functions
-def _rate_complexity(classes, functions):
-    total = len(classes) + len(functions)
-    if total < 5:
-        return "Low"
-    elif total < 15:
-        return "Medium"
-    else:
-        return "High"
-
-
-def _detect_smells(parsed):
-    smells = []
-    if len(parsed.get("functions", [])) == 0:
-        smells.append("No functions found.")
-    if len(parsed.get("classes", [])) == 0:
-        smells.append("No classes found.")
-    if len(parsed.get("imports", [])) == 0:
-        smells.append("No imports detected.")
-    return smells
-
-
-def _build_prompt(parsed, arch):
+def _build_prompt(parsed, architecture):
     return f"""
-Provide an expert-level architectural analysis.
+Analyze the following parsed code and architecture:
 
-CLASSES: {parsed.get("classes")}
-FUNCTIONS: {parsed.get("functions")}
-IMPORTS: {parsed.get("imports")}
+PARSED:
+{json.dumps(parsed, indent=2)}
 
-ARCHITECTURE NODES: {arch.get("nodes")}
-ARCHITECTURE EDGES: {arch.get("edges")}
+ARCHITECTURE:
+{json.dumps(architecture, indent=2)}
 
-Return:
-1. A clear high-level system summary
-2. Architecture structure explanation
-3. Possible code smells
-4. Suggestions for refactoring
-5. Modularization improvements
+Provide:
+1. High-level system summary
+2. Architecture explanation
+3. Code smells
+4. Refactoring suggestions
+5. Modularity improvements
 """
+
+
+# ---------------------------------------------------------
+# END OF FILE
+# ---------------------------------------------------------

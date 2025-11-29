@@ -1,60 +1,41 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from app.utils.file_utils import save_upload_file_temp
+# app/routes/report.py
+
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from app.services.ai_service import generate_full_ai_insights
 from app.services.parser_service import parse_code_from_text
 from app.services.architecture_service import build_architecture_map
-from app.services.layout_service import generate_layout
-from app.services.ai_service import generate_ai_insights
 
-
-router = APIRouter()   # IMPORTANT
+router = APIRouter()
 
 
 @router.post("/report/")
-async def generate_full_report(
-    file: UploadFile = File(...),
-    use_llm: bool = Form(False)
-):
-    if not file:
-        raise HTTPException(status_code=400, detail="No file uploaded")
+async def generate_report(file: UploadFile = File(...), use_llm: bool = False):
+    """
+    Generates a full AI-powered report from a single file:
+    - Parsing
+    - Architecture extraction
+    - AI static insights
+    - OPTIONAL: LLM architectural reasoning
+    """
 
-    temp_path = await save_upload_file_temp(file)
+    if not (file.filename.endswith(".py") or file.filename.endswith(".java")):
+        raise HTTPException(
+            status_code=400, detail="Only .py and .java files are supported."
+        )
 
-    try:
-        file_bytes = await file.read()
-        code_text = file_bytes.decode("utf-8", errors="ignore")
+    code = (await file.read()).decode("utf-8", errors="ignore")
+    language = "python" if file.filename.endswith(".py") else "java"
 
-        filename = file.filename.lower()
+    parsed = parse_code_from_text(code, language)
+    arch = build_architecture_map(parsed)
 
-        # Detect language
-        if filename.endswith(".py"):
-            language = "python"
-        elif filename.endswith(".java"):
-            language = "java"
-        else:
-            raise HTTPException(status_code=400, detail="Unsupported file type (.py or .java only)")
+    # Call unified AI engine
+    ai_output = generate_full_ai_insights(parsed, arch, use_llm=use_llm)
 
-        # Step 1 — Parse
-        parsed = parse_code_from_text(code_text, language)
-
-        # Step 2 — Architecture
-        architecture = build_architecture_map(parsed)
-
-        # Step 3 — Layout
-        layout = generate_layout(architecture)
-
-        # Step 4 — AI (optional)
-        ai = generate_ai_insights(parsed, architecture, use_llm)
-
-        return {
-            "filename": file.filename,
-            "language": language,
-            "parsed": parsed,
-            "architecture": architecture,
-            "layout": layout,
-            "ai": ai
-        }
-
-    finally:
-        import os
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+    return {
+        "filename": file.filename,
+        "language": language,
+        "parsed": parsed,
+        "architecture": arch,
+        "ai_report": ai_output
+    }
