@@ -184,3 +184,34 @@ def detect_service_calls(parsed_files: dict):
                 })
 
     return call_graph
+
+############################################################
+# DAY-12 — ONLY RETURN NECESSARY SUMMARY
+############################################################
+
+# ---------------------------------------------------------
+# DAY-12 — Clean parsed output before building architecture
+# ---------------------------------------------------------
+
+def clean_parsed_output(parsed_files: dict) -> dict:
+    """
+    Cleans the raw parsed output:
+    - Removes empty lists (empty classes, functions, imports)
+    - Ensures raw_text exists
+    - Normalizes structures for safety
+    """
+
+    cleaned = {}
+
+    for fname, pdata in parsed_files.items():
+
+        cleaned[fname] = {
+            "classes": pdata.get("classes", []) or [],
+            "functions": pdata.get("functions", []) or [],
+            "imports": pdata.get("imports", []) or [],
+            "raw_text": pdata.get("raw_text", ""),
+        }
+
+    return cleaned
+
+

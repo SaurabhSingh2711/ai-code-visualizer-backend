@@ -1,0 +1,800 @@
+{
+    "parsed_files": {
+        "app.py": {
+            "classes": [],
+            "functions": [
+                "main"
+            ],
+            "imports": [
+                "user_service",
+                "db_service"
+            ],
+            "raw_text": "from user_service import UserService\nimport db_service\n\ndef main():\n    service = UserService()\n    service.create_user(\"   alice   \")\n\n    db = db_service.Database()\n    db.save(\"Direct Save\")\n"
+        },
+        "db_service.py": {
+            "classes": [
+                "Database"
+            ],
+            "functions": [
+                "save"
+            ],
+            "imports": [],
+            "raw_text": "class Database:\n    def save(self, data):\n        print(f\"Saving to database: {data}\")"
+        },
+        "main.py": {
+            "classes": [],
+            "functions": [
+                "run"
+            ],
+            "imports": [
+                "user_service",
+                "utils.helpers"
+            ],
+            "raw_text": "from user_service import UserService\nfrom utils.helpers import format_user\n\ndef run():\n    service = UserService()\n    formatted = format_user(\"Alice\")\n    result = service.create_user(formatted)\n    print(\"Result =\", result)\n\nrun()\n"
+        },
+        "user_service.py": {
+            "classes": [
+                "UserService"
+            ],
+            "functions": [
+                "create_user",
+                "run"
+            ],
+            "imports": [
+                "db_service",
+                "utils.helpers"
+            ],
+            "raw_text": "import db_service\nfrom utils.helpers import format_user\n\nclass UserService:\n    def create_user(self, name):\n        formatted = format_user(name)\n        db = db_service.Database()\n        db.save(formatted)\n\n    def run(self):\n        print(\"User service running\")"
+        },
+        "helpers.py": {
+            "classes": [],
+            "functions": [
+                "format_user"
+            ],
+            "imports": [],
+            "raw_text": "def format_user(name):\n    return name.strip().title()"
+        }
+    },
+    "system_summary": {
+        "summary": "Parsed project \u2192 2 classes, 6 functions, 6 imports",
+        "combined": {
+            "classes": [
+                "Database",
+                "UserService"
+            ],
+            "functions": [
+                "main",
+                "save",
+                "run",
+                "create_user",
+                "run",
+                "format_user"
+            ],
+            "imports": [
+                "user_service",
+                "db_service",
+                "user_service",
+                "utils.helpers",
+                "db_service",
+                "utils.helpers"
+            ]
+        }
+    },
+    "cross_file_relations": [
+        {
+            "from": "app.py",
+            "to": "db_service.py",
+            "relation": "imports-module:db_service"
+        },
+        {
+            "from": "app.py",
+            "to": "db_service.py",
+            "relation": "references-class:Database"
+        },
+        {
+            "from": "app.py",
+            "to": "db_service.py",
+            "relation": "references-function:save"
+        },
+        {
+            "from": "app.py",
+            "to": "user_service.py",
+            "relation": "imports-module:user_service"
+        },
+        {
+            "from": "app.py",
+            "to": "user_service.py",
+            "relation": "references-class:UserService"
+        },
+        {
+            "from": "app.py",
+            "to": "user_service.py",
+            "relation": "references-function:create_user"
+        },
+        {
+            "from": "main.py",
+            "to": "user_service.py",
+            "relation": "imports-module:user_service"
+        },
+        {
+            "from": "main.py",
+            "to": "user_service.py",
+            "relation": "references-class:UserService"
+        },
+        {
+            "from": "main.py",
+            "to": "user_service.py",
+            "relation": "references-function:create_user"
+        },
+        {
+            "from": "main.py",
+            "to": "user_service.py",
+            "relation": "references-function:run"
+        },
+        {
+            "from": "main.py",
+            "to": "helpers.py",
+            "relation": "imports-module:utils.helpers"
+        },
+        {
+            "from": "main.py",
+            "to": "helpers.py",
+            "relation": "references-function:format_user"
+        },
+        {
+            "from": "user_service.py",
+            "to": "db_service.py",
+            "relation": "imports-module:db_service"
+        },
+        {
+            "from": "user_service.py",
+            "to": "db_service.py",
+            "relation": "references-class:Database"
+        },
+        {
+            "from": "user_service.py",
+            "to": "db_service.py",
+            "relation": "references-function:save"
+        },
+        {
+            "from": "user_service.py",
+            "to": "main.py",
+            "relation": "references-function:run"
+        },
+        {
+            "from": "user_service.py",
+            "to": "helpers.py",
+            "relation": "imports-module:utils.helpers"
+        },
+        {
+            "from": "user_service.py",
+            "to": "helpers.py",
+            "relation": "references-function:format_user"
+        }
+    ],
+    "subsystems": {
+        "controller": [],
+        "service": [
+            "db_service.py",
+            "user_service.py"
+        ],
+        "data": [],
+        "util": [
+            "helpers.py"
+        ],
+        "unknown": [
+            "app.py",
+            "main.py"
+        ]
+    },
+    "layers": {
+        "app_layer": [
+            "app.py",
+            "main.py"
+        ],
+        "service_layer": [
+            "db_service.py",
+            "user_service.py"
+        ],
+        "data_layer": [],
+        "utility_layer": [
+            "helpers.py"
+        ],
+        "unknown_layer": []
+    },
+    "service_calls": [
+        {
+            "from": "app.py",
+            "to": "user_service.py",
+            "relation": "calls-service:UserService"
+        },
+        {
+            "from": "main.py",
+            "to": "user_service.py",
+            "relation": "calls-service:UserService"
+        }
+    ],
+    "architecture": {
+        "nodes": [
+            {
+                "id": "func:main:app.py",
+                "label": "main",
+                "type": "function",
+                "file": "app.py"
+            },
+            {
+                "id": "import:user_service:app.py",
+                "label": "user_service",
+                "type": "import",
+                "file": "app.py"
+            },
+            {
+                "id": "import:db_service:app.py",
+                "label": "db_service",
+                "type": "import",
+                "file": "app.py"
+            },
+            {
+                "id": "class:Database:db_service.py",
+                "label": "Database",
+                "type": "class",
+                "file": "db_service.py"
+            },
+            {
+                "id": "func:save:db_service.py",
+                "label": "save",
+                "type": "function",
+                "file": "db_service.py"
+            },
+            {
+                "id": "func:run:main.py",
+                "label": "run",
+                "type": "function",
+                "file": "main.py"
+            },
+            {
+                "id": "import:user_service:main.py",
+                "label": "user_service",
+                "type": "import",
+                "file": "main.py"
+            },
+            {
+                "id": "import:utils.helpers:main.py",
+                "label": "utils.helpers",
+                "type": "import",
+                "file": "main.py"
+            },
+            {
+                "id": "class:UserService:user_service.py",
+                "label": "UserService",
+                "type": "class",
+                "file": "user_service.py"
+            },
+            {
+                "id": "func:create_user:user_service.py",
+                "label": "create_user",
+                "type": "function",
+                "file": "user_service.py"
+            },
+            {
+                "id": "func:run:user_service.py",
+                "label": "run",
+                "type": "function",
+                "file": "user_service.py"
+            },
+            {
+                "id": "import:db_service:user_service.py",
+                "label": "db_service",
+                "type": "import",
+                "file": "user_service.py"
+            },
+            {
+                "id": "import:utils.helpers:user_service.py",
+                "label": "utils.helpers",
+                "type": "import",
+                "file": "user_service.py"
+            },
+            {
+                "id": "func:format_user:helpers.py",
+                "label": "format_user",
+                "type": "function",
+                "file": "helpers.py"
+            }
+        ],
+        "edges": [
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "imports-module:db_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "references-class:Database",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "references-function:save",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "imports-module:user_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "references-class:UserService",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "references-function:create_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "imports-module:user_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-class:UserService",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-function:create_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-function:run",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "helpers.py",
+                "relation": "imports-module:utils.helpers",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "helpers.py",
+                "relation": "references-function:format_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "imports-module:db_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "references-class:Database",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "references-function:save",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "main.py",
+                "relation": "references-function:run",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "helpers.py",
+                "relation": "imports-module:utils.helpers",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "helpers.py",
+                "relation": "references-function:format_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "db_service.py",
+                "to": "service",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "user_service.py",
+                "to": "service",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "helpers.py",
+                "to": "util",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "app.py",
+                "to": "unknown",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "main.py",
+                "to": "unknown",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "app.py",
+                "to": "app_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "main.py",
+                "to": "app_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "db_service.py",
+                "to": "service_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "user_service.py",
+                "to": "service_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "helpers.py",
+                "to": "utility_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "calls-service:UserService",
+                "type": "service-call"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "calls-service:UserService",
+                "type": "service-call"
+            }
+        ],
+        "summary": "14 nodes, 30 relationships"
+    },
+    "layout": {
+        "nodes": [
+            {
+                "id": "func:main:app.py",
+                "label": "main",
+                "type": "function",
+                "x": 100,
+                "y": 100,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:user_service:app.py",
+                "label": "user_service",
+                "type": "import",
+                "x": 220,
+                "y": 180,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:db_service:app.py",
+                "label": "db_service",
+                "type": "import",
+                "x": 340,
+                "y": 260,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "class:Database:db_service.py",
+                "label": "Database",
+                "type": "class",
+                "x": 460,
+                "y": 340,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "func:save:db_service.py",
+                "label": "save",
+                "type": "function",
+                "x": 580,
+                "y": 420,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "func:run:main.py",
+                "label": "run",
+                "type": "function",
+                "x": 700,
+                "y": 500,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:user_service:main.py",
+                "label": "user_service",
+                "type": "import",
+                "x": 820,
+                "y": 580,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:utils.helpers:main.py",
+                "label": "utils.helpers",
+                "type": "import",
+                "x": 940,
+                "y": 660,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "class:UserService:user_service.py",
+                "label": "UserService",
+                "type": "class",
+                "x": 1060,
+                "y": 740,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "func:create_user:user_service.py",
+                "label": "create_user",
+                "type": "function",
+                "x": 1180,
+                "y": 820,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "func:run:user_service.py",
+                "label": "run",
+                "type": "function",
+                "x": 1300,
+                "y": 900,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:db_service:user_service.py",
+                "label": "db_service",
+                "type": "import",
+                "x": 1420,
+                "y": 980,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "import:utils.helpers:user_service.py",
+                "label": "utils.helpers",
+                "type": "import",
+                "x": 1540,
+                "y": 1060,
+                "color": "#00E5FF",
+                "size": 20
+            },
+            {
+                "id": "func:format_user:helpers.py",
+                "label": "format_user",
+                "type": "function",
+                "x": 1660,
+                "y": 1140,
+                "color": "#00E5FF",
+                "size": 20
+            }
+        ],
+        "edges": [
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "imports-module:db_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "references-class:Database",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "db_service.py",
+                "relation": "references-function:save",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "imports-module:user_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "references-class:UserService",
+                "type": "cross-file"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "references-function:create_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "imports-module:user_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-class:UserService",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-function:create_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "references-function:run",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "helpers.py",
+                "relation": "imports-module:utils.helpers",
+                "type": "cross-file"
+            },
+            {
+                "from": "main.py",
+                "to": "helpers.py",
+                "relation": "references-function:format_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "imports-module:db_service",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "references-class:Database",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "db_service.py",
+                "relation": "references-function:save",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "main.py",
+                "relation": "references-function:run",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "helpers.py",
+                "relation": "imports-module:utils.helpers",
+                "type": "cross-file"
+            },
+            {
+                "from": "user_service.py",
+                "to": "helpers.py",
+                "relation": "references-function:format_user",
+                "type": "cross-file"
+            },
+            {
+                "from": "db_service.py",
+                "to": "service",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "user_service.py",
+                "to": "service",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "helpers.py",
+                "to": "util",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "app.py",
+                "to": "unknown",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "main.py",
+                "to": "unknown",
+                "relation": "belongs-to-subsystem",
+                "type": "subsystem"
+            },
+            {
+                "from": "app.py",
+                "to": "app_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "main.py",
+                "to": "app_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "db_service.py",
+                "to": "service_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "user_service.py",
+                "to": "service_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "helpers.py",
+                "to": "utility_layer",
+                "relation": "belongs-to-layer",
+                "type": "layer"
+            },
+            {
+                "from": "app.py",
+                "to": "user_service.py",
+                "relation": "calls-service:UserService",
+                "type": "service-call"
+            },
+            {
+                "from": "main.py",
+                "to": "user_service.py",
+                "relation": "calls-service:UserService",
+                "type": "service-call"
+            }
+        ]
+    }
+}

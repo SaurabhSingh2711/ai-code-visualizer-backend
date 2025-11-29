@@ -1,49 +1,46 @@
 # app/services/architecture_service.py
 
 """
-Architecture building services for:
-- Single-file analysis (Day 5)
-- Multi-file system architecture (Day 10+)
+Architecture builders:
+- Day-5: Single-file architecture (cleaned & optimized in Day-12)
+- Day-10/11: Multi-file system architecture
 """
 
+# ⬇️ NEW IMPORTS for Day-12 compression
+from app.utils.compress_utils import (
+    dedupe_nodes,
+    dedupe_edges,
+    minimize_node,
+    minimize_edge
+)
+
+# ===================================================================
+# ✅ DAY-12 — Optimized Single-File Architecture Builder
+# ===================================================================
 def build_architecture_map(parsed_data: dict):
     """
-    Day-5:
-    Build architecture graph from a single parsed file.
-    parsed_data should contain:
-    - classes
-    - functions
-    - imports
+    Build optimized, compressed architecture graph from a single file.
+    Used in Day-5 and for single-file analysis endpoint.
     """
 
     nodes = []
     edges = []
 
-    # Classes
+    # -----------------------------
+    # Nodes
+    # -----------------------------
     for cls in parsed_data.get("classes", []):
-        nodes.append({
-            "id": f"class:{cls}",
-            "label": cls,
-            "type": "class"
-        })
+        nodes.append({"id": f"class:{cls}", "label": cls, "type": "class"})
 
-    # Functions
     for func in parsed_data.get("functions", []):
-        nodes.append({
-            "id": f"func:{func}",
-            "label": func,
-            "type": "function"
-        })
+        nodes.append({"id": f"func:{func}", "label": func, "type": "function"})
 
-    # Imports
     for imp in parsed_data.get("imports", []):
-        nodes.append({
-            "id": f"import:{imp}",
-            "label": imp,
-            "type": "import"
-        })
+        nodes.append({"id": f"import:{imp}", "label": imp, "type": "import"})
 
-    # Simple edges: import → class/function usage (base version)
+    # -----------------------------
+    # Edges (simple relationships)
+    # -----------------------------
     for imp in parsed_data.get("imports", []):
         for cls in parsed_data.get("classes", []):
             edges.append({
@@ -58,24 +55,25 @@ def build_architecture_map(parsed_data: dict):
                 "relation": "uses"
             })
 
-    summary = (
-        f"{len(nodes)} nodes, {len(edges)} relationships "
-        f"({len(parsed_data.get('classes', []))} classes, "
-        f"{len(parsed_data.get('functions', []))} functions, "
-        f"{len(parsed_data.get('imports', []))} imports)"
-    )
+    # -----------------------------
+    # DAY-12 Optimization
+    # -----------------------------
+    nodes = dedupe_nodes(nodes)
+    edges = dedupe_edges(edges)
+
+    nodes = [minimize_node(n) for n in nodes]
+    edges = [minimize_edge(e) for e in edges]
 
     return {
         "nodes": nodes,
         "edges": edges,
-        "summary": summary
+        "summary": f"{len(nodes)} nodes, {len(edges)} edges"
     }
 
 
-# ---------------------------------------------------------------------
-# ❇️ DAY-10 / DAY-11: Complete multi-file system architecture builder
-# ---------------------------------------------------------------------
-
+# ===================================================================
+# ✅ DAY-10/11 — Multi-File System Architecture Builder
+# ===================================================================
 def build_system_architecture(
     parsed_files: dict,
     cross_relations: list,
@@ -84,21 +82,15 @@ def build_system_architecture(
     service_calls: list
 ):
     """
-    Build a project-wide full architecture graph.
-
-    Combines:
-    ✔ classes/functions/imports from all files
-    ✔ cross-file relations (imports, references)
-    ✔ subsystem grouping
-    ✔ layered architecture detection
-    ✔ service-to-service calls
+    Project-wide architecture graph.
+    Combines classes/functions/imports + relationships across all files.
     """
 
     nodes = []
     edges = []
 
     # ------------------------------------------------------------
-    # 1. Create nodes for each file's classes/functions/imports
+    # 1. Create nodes for each file’s classes/functions/imports
     # ------------------------------------------------------------
     for fname, pdata in parsed_files.items():
 
@@ -127,7 +119,7 @@ def build_system_architecture(
             })
 
     # ------------------------------------------------------------
-    # 2. Add edges for cross-file relations
+    # 2. Cross-file relations (imports, references)
     # ------------------------------------------------------------
     for rel in cross_relations:
         edges.append({
@@ -138,7 +130,7 @@ def build_system_architecture(
         })
 
     # ------------------------------------------------------------
-    # 3. Subsystem grouping: file → subsystem
+    # 3. Subsystem grouping
     # ------------------------------------------------------------
     for subsystem_name, file_list in subsystems.items():
         for f in file_list:
@@ -150,7 +142,7 @@ def build_system_architecture(
             })
 
     # ------------------------------------------------------------
-    # 4. Layered architecture grouping
+    # 4. Layer grouping
     # ------------------------------------------------------------
     for layer_name, file_list in layers.items():
         for f in file_list:
@@ -162,7 +154,7 @@ def build_system_architecture(
             })
 
     # ------------------------------------------------------------
-    # 5. Service-to-service communication edges
+    # 5. Service-to-service call graph
     # ------------------------------------------------------------
     for svc in service_calls:
         edges.append({
@@ -172,8 +164,6 @@ def build_system_architecture(
             "type": "service-call"
         })
 
-    # ------------------------------------------------------------
-    # Final system architecture graph
     # ------------------------------------------------------------
     summary = f"{len(nodes)} nodes, {len(edges)} relationships"
 
