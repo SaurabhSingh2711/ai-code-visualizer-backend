@@ -1,19 +1,27 @@
+# Virtual environment
+venv/
+ENV/
+env/
+
 # Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-venv/
-.env
-.idea/
+
+# IDE
 .vscode/
+.idea/
 
-# OS Files
-.DS_Store
-Thumbs.db
+# Logs
+logs/
+*.log
 
-# Outputs
-uploads/
-output/
+# Uploads
+uploaded_files/
+uploaded_zips/
 
+# Environment files
 .env
+.env.*
+
+# Mac/Linux trash
+.DS_Store
